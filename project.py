@@ -383,7 +383,7 @@ class kwikml:
             self.data.columns,
         )
 
-    def getCodeSnippet(self):
+    def get_code_snippet(self):
         st.header("** Try it yourself!🖊️ **")
         return f"""
         ----------------------------------------------------------
@@ -536,7 +536,7 @@ if __name__ == "__main__":
         controller.print_table()
         c1, c2 = st.columns((1, 1))
         with c2:
-            snippet = controller.getCodeSnippet()
+            snippet = controller.get_code_snippet()
             st.code(snippet)
         with c1:
             st.header(f"**Tips on the {controller.chosen_classifier} 💡 **")
