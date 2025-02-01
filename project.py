@@ -1,20 +1,9 @@
-import base64
-import os
-import sys
-import time
-from msilib.schema import Error
-from re import S
-
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
-from bokeh.io import output_file, show
-from bokeh.layouts import column, layout
-from bokeh.models import BoxAnnotation, Panel, Tabs, Toggle
+from bokeh.io import output_file
+from bokeh.models import Panel, Tabs
 from bokeh.palettes import Set3
 from bokeh.plotting import figure
 from pandas.errors import ParserError
@@ -25,13 +14,7 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.preprocessing import (
-    LabelBinarizer,
-    LabelEncoder,
-    MinMaxScaler,
-    OneHotEncoder,
-)
-from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, OneHotEncoder
 
 st.set_page_config(page_title="KwikML", layout="wide", page_icon="⚡")
 hide_streamlit_style = """
@@ -157,8 +140,7 @@ class kwikml:
             self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
                 X, y, test_size=(1 - train_test / 100), random_state=42
             )
-        except Exception as e:
-            print(e)
+        except:
             st.markdown(
                 '<span style="color:red">With this amount of data and split size the train data will have no records, <br /> Please change reduce and split parameter <br /> </span>',
                 unsafe_allow_html=True,
@@ -383,9 +365,9 @@ class kwikml:
             self.data.columns,
         )
 
-    def get_code_snippet(self):
+    def getCodeSnippet(self):
         st.header("** Try it yourself!🖊️ **")
-        return f"""
+        snippet = f"""
         ----------------------------------------------------------
             import numpy as np
             import pandas as pd
@@ -415,6 +397,7 @@ class kwikml:
             print("test score =", test_score) 
 
         """
+        return snippet
 
 
 if __name__ == "__main__":
@@ -466,34 +449,39 @@ if __name__ == "__main__":
                 if type_of_plot == "Bar":
                     x_column = st.selectbox("Select x-axis", all_columns_names)
                     y_column = st.selectbox("Select y-axis", all_columns_names)
-                    if want_query := st.checkbox("Enable Query column"):
+                    want_query = st.checkbox("Enable Query column")
+                    if want_query:
                         query = st.selectbox("Select a query", all_columns_names)
                         all_values = controller.data.loc[:, query].tolist()
                         value = st.selectbox(
-                            f"Select the value from {query}", all_values
+                            "Select the value from {}".format(query), all_values
                         )
-                        df = df.query(f"{query} == {value}")
-                    if generate_plot := st.button("Generate Plot"):
+                        df = df.query("{} == {}".format(query, value))
+                    generate_plot = st.button("Generate Plot")
+                    if generate_plot:
                         fig = px.bar(df, x=x_column, y=y_column)
                         st.plotly_chart(fig, True)
                 elif type_of_plot == "Line":
                     x_column = st.selectbox("Select x-axis", all_columns_names)
                     y_column = st.selectbox("Select y-axis", all_columns_names)
-                    if want_query := st.checkbox("Enable Query column"):
+                    want_query = st.checkbox("Enable Query column")
+                    if want_query:
                         query = st.selectbox("Select a query", all_columns_names)
                         all_values = controller.data.loc[:, query].tolist()
                         value = st.selectbox(
-                            f"Select the value from {query}", all_values
+                            "Select the value from {}".format(query), all_values
                         )
-                        df = df.query(f"{query} == {value}")
+                        df = df.query("{} == {}".format(query, value))
                     fig = px.line(df, x=x_column, y=y_column)
-                    if generate_plot := st.button("Generate Plot"):
+                    generate_plot = st.button("Generate Plot")
+                    if generate_plot:
                         st.plotly_chart(fig, True)
 
                 elif type_of_plot == "Pie":
                     names = st.selectbox("Select Name:", all_columns_names)
                     values = st.selectbox("Select Value:", all_columns_names)
-                    if generate_plot := st.button("Generate Plot"):
+                    generate_plot = st.button("Generate Plot")
+                    if generate_plot:
                         fig = px.pie(df, values=values, names=names, hole=0.3)
                         st.plotly_chart(fig, True)
 
@@ -501,7 +489,8 @@ if __name__ == "__main__":
                     x_column = st.selectbox("Select data on x-axis", all_columns_names)
                     y_column = st.selectbox("Select data on y-axis", all_columns_names)
                     fig = px.area(df, x=x_column, y=y_column)
-                    if generate_plot := st.button("Generate Plot"):
+                    generate_plot = st.button("Generate Plot")
+                    if generate_plot:
                         st.plotly_chart(fig, True)
 
             except Exception as e:
@@ -522,22 +511,23 @@ if __name__ == "__main__":
     except (AttributeError, ParserError, KeyError) as e:
         st.markdown("")
 
-    if controller.data is not None and len(controller.features) > 1 and predict_btn:
-        st.sidebar.text("Progress:")
-        my_bar = st.sidebar.progress(0)
-        predictions, predictions_train, result, result_train = controller.predict()
-        for percent_complete in range(100):
-            my_bar.progress(percent_complete + 1)
+    if controller.data is not None and len(controller.features) > 1:
+        if predict_btn:
+            st.sidebar.text("Progress:")
+            my_bar = st.sidebar.progress(0)
+            predictions, predictions_train, result, result_train = controller.predict()
+            for percent_complete in range(100):
+                my_bar.progress(percent_complete + 1)
 
-        # Getting Accurary Reports
-        st.header("Accuracy Report")
-        controller.get_metrics()
-        controller.plot_result()
-        controller.print_table()
-        c1, c2 = st.columns((1, 1))
-        with c2:
-            snippet = controller.get_code_snippet()
-            st.code(snippet)
-        with c1:
-            st.header(f"**Tips on the {controller.chosen_classifier} 💡 **")
-            st.info(controller.model_infos[controller.chosen_classifier])
+            # Getting Accurary Reports
+            st.header("Accuracy Report")
+            controller.get_metrics()
+            controller.plot_result()
+            controller.print_table()
+            c1, c2 = st.columns((1, 1))
+            with c2:
+                snippet = controller.getCodeSnippet()
+                st.code(snippet)
+            with c1:
+                st.header(f"**Tips on the {controller.chosen_classifier} 💡 **")
+                st.info(controller.model_infos[controller.chosen_classifier])
